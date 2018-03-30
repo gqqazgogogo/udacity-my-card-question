@@ -25,6 +25,7 @@ class TestDetail extends Component {
     };
   };
 
+  // tag: #03 new Animated.Value("0deg")输出的结果，我在模拟器的inspector中查看是"0deg0"，这个是为什么？
   state = {
     currentIndex: 0,
     rightNum: 0,
@@ -33,7 +34,7 @@ class TestDetail extends Component {
     animationInfo: {
       questionOpacity: new Animated.Value(1),
       answerOpacity: new Animated.Value(0),
-      // cardRotateY: new Animated.Value('0deg')
+      cardRotateY: new Animated.Value("0deg")
     }
   };
 
@@ -63,6 +64,7 @@ class TestDetail extends Component {
   showCardResult(currentIndex) {
     const { animationInfo } = this.state;
     const { questionOpacity, answerOpacity, cardRotateY } = animationInfo;
+    // tag: #04 这里导致报错: { rotateY: null }
     Animated.spring(cardRotateY, { toValue: "90deg", friction: 4 }).start();
     Animated.timing(questionOpacity, { duration: 100, toValue: 0 }).start(
       ({ finished }) => {
