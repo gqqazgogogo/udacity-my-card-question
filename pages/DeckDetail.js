@@ -72,7 +72,7 @@ class DeckDetail extends Component {
             />
           )}
           <TextButton
-            text="新增"
+            text="新增卡片"
             color={primary}
             onPress={() => this.toggleCreateModal(true)}
           />

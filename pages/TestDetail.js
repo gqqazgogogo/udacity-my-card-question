@@ -25,16 +25,18 @@ class TestDetail extends Component {
     };
   };
 
-  // tag: #03 new Animated.Value("0deg")输出的结果，我在模拟器的inspector中查看是"0deg0"，这个是为什么？
+  // tag: #03 下面第39、132行注释代码，new Animated.Value("0deg")的结果是"0deg0"，
+  // 我想知道Animated如何使用类似角度这些单位？
   state = {
     currentIndex: 0,
     rightNum: 0,
+    confirmRight: false,
     showResult: false,
     end: false,
     animationInfo: {
       questionOpacity: new Animated.Value(1),
       answerOpacity: new Animated.Value(0),
-      cardRotateY: new Animated.Value("0deg")
+      // cardRotateY: new Animated.Value("0deg")
     }
   };
 
@@ -45,46 +47,79 @@ class TestDetail extends Component {
     const cards = this.props.navigation.state.params;
     if (cards[currentIndex].answer === answer) {
       rightNum++;
-    }
-    currentIndex++;
-    if (currentIndex === cards.length) {
-      this.showCardResult();
-      this.setState({
-        rightNum,
-        end: true
-      });
+      this.setState({ confirmRight: true, rightNum });
     } else {
-      this.showCardResult(currentIndex);
-      this.setState({
-        rightNum
-      });
+      this.setState({ confirmRight: false });
     }
+    this.showCardResult(currentIndex);
   }
 
   showCardResult(currentIndex) {
-    const { animationInfo } = this.state;
-    const { questionOpacity, answerOpacity, cardRotateY } = animationInfo;
-    // tag: #04 这里导致报错: { rotateY: null }
-    Animated.spring(cardRotateY, { toValue: "90deg", friction: 4 }).start();
-    Animated.timing(questionOpacity, { duration: 100, toValue: 0 }).start(
-      ({ finished }) => {
-        if (finished) {
-          this.setState({
-            showResult: true
-          });
-          Animated.timing(answerOpacity, { duration: 100, toValue: 1 }).start();
-        }
+    const { showAnswer } = this.state;
+    if (showAnswer) {
+      return;
+    }
+    const {
+      questionOpacity,
+      answerOpacity,
+      cardRotateY
+    } = this.state.animationInfo;
+    this.setState({
+      showAnswer: true
+    });
+    // tag: #04 我想实现卡片翻转的动画效果，下面第71、132行注释的代码导致报错: { rotateY: null } 和问题#03相关联
+    // Animated.spring(cardRotateY, { toValue: "90deg", friction: 4 }).start();
+    Animated.sequence([
+      Animated.timing(questionOpacity, { duration: 200, toValue: 0 }),
+      Animated.timing(answerOpacity, { duration: 200, toValue: 1 })
+    ]).start(({ finished }) => {
+      if (finished) {
+        setTimeout(() => {
+          this.nextQuestion(currentIndex);
+        }, 1000);
       }
-    );
+    });
   }
 
-  showCardQuestion() {}
-
-  nextQuestion(nextIndex) {}
+  nextQuestion(currentIndex) {
+    const {
+      questionOpacity,
+      answerOpacity
+      // cardRotateY
+    } = this.state.animationInfo;
+    const cards = this.props.navigation.state.params;
+    if (currentIndex < cards.length - 1) {
+      currentIndex++;
+      this.setState({
+        currentIndex
+      });
+    } else {
+      this.setState({
+        end: true
+      });
+    }
+    setTimeout(() => {
+      Animated.sequence([
+        Animated.timing(answerOpacity, { duration: 200, toValue: 0 }),
+        Animated.timing(questionOpacity, { duration: 200, toValue: 1 })
+      ]).start(({ finished }) => {
+        this.setState({
+          showAnswer: false
+        });
+      });
+    }, 0);
+  }
 
   render() {
     const cards = this.props.navigation.state.params;
-    const { currentIndex, animationInfo, showResult } = this.state;
+    const {
+      currentIndex,
+      animationInfo,
+      showResult,
+      confirmRight,
+      end,
+      rightNum
+    } = this.state;
     const { questionOpacity, answerOpacity, cardRotateY } = animationInfo;
     return (
       <ContainerView>
@@ -94,33 +129,39 @@ class TestDetail extends Component {
         <ContainerCenterViewAnimated
           style={[
             styles.questionCard,
-            { transform: [{ rotateY: cardRotateY }] }
+            // { transform: [{ rotateY: cardRotateY }] }
           ]}
         >
           {!showResult && (
             <QuestionTextAnimated style={{ opacity: questionOpacity }}>
-              {cards[currentIndex].title}
+              {end
+                ? `本次共答对${rightNum}/${cards.length}题,正确率为${(
+                    rightNum / cards.length
+                  ).toFixed(4) * 100}%`
+                : cards[currentIndex].title}
             </QuestionTextAnimated>
           )}
-          {showResult && (
-            <Entypo name="circle" color={green} style={[styles.answerResult]} />
+          {confirmRight && (
+            <ResultCircle name="circle" style={{ opacity: answerOpacity }} />
           )}
-          {showResult && (
-            <Entypo name="cross" color={red} style={[styles.answerResult]} />
+          {!confirmRight && (
+            <ResultCross name="cross" style={{ opacity: answerOpacity }} />
           )}
         </ContainerCenterViewAnimated>
-        <StackView>
-          <TextButtonLight
-            text="错误"
-            color={red}
-            onPress={() => this.confrimAnswer(false)}
-          />
-          <TextButtonLight
-            text="正确"
-            color={green}
-            onPress={() => this.confrimAnswer(true)}
-          />
-        </StackView>
+        {!end && (
+          <StackView>
+            <TextButtonLight
+              text="错误"
+              color={red}
+              onPress={() => this.confrimAnswer(false)}
+            />
+            <TextButtonLight
+              text="正确"
+              color={green}
+              onPress={() => this.confrimAnswer(true)}
+            />
+          </StackView>
+        )}
       </ContainerView>
     );
   }
@@ -130,6 +171,18 @@ const StepText = styled.Text`
   font-size: 18px;
   text-align: center;
 `;
+
+const ResultCircle = Animated.createAnimatedComponent(styled(Entypo)`
+  font-size: 80px;
+  margin: 20px;
+  color: ${green};
+`);
+
+const ResultCross = Animated.createAnimatedComponent(styled(Entypo)`
+  font-size: 120px;
+  color: ${red};
+`);
+
 const ContainerCenterViewAnimated = Animated.createAnimatedComponent(
   ContainerCenterView
 );
@@ -149,9 +202,6 @@ const styles = StyleSheet.create({
       width: 2,
       height: 2
     }
-  },
-  answerResult: {
-    fontSize: 120
   }
 });
 

@@ -2,21 +2,22 @@ import { RECEIVE_DECKS, ADD_DECK, TOUCH_DECK, ADD_CARD } from "../actions";
 import { updateDeckStorage, getDecks } from "../utils/helpers";
 
 const initState = {
-  decks: [
-    {
-      title: 'tester',
-      cards: [
-        {
-          title: 'card01',
-          answer: true
-        },
-        {
-          title: 'card02',
-          answer: true
-        }
-      ]
-    }
-  ]
+  // decks: [
+  //   {
+  //     title: '测试卡片集',
+  //     cards: [
+  //       {
+  //         title: '卡片1,答案正确',
+  //         answer: true
+  //       },
+  //       {
+  //         title: '卡片2,答案错误',
+  //         answer: false
+  //       }
+  //     ]
+  //   }
+  // ],
+  decks: []
 };
 
 function entries(state = initState, action) {
@@ -30,7 +31,8 @@ function entries(state = initState, action) {
       const addDeckDecks = [...state.decks, action.deck];
       updateDeckStorage(addDeckDecks).then(res => {
         console.log(res);
-        // tag: #01 为什么这里AsyncStorage.set成功并且get验证有值，但我刷新应用后就为空了？是因为current mode: development么？
+        // tag: #01 为什么这里AsyncStorage.set成功并且get验证有值，但我模拟器和真机中刷新或重启应用后就为空了？
+        // 是因为current mode: development或者是expo而没发布么？
         getDecks().then(res => console.log(res));
       });
       return {
@@ -51,7 +53,6 @@ function entries(state = initState, action) {
       })
       updateDeckStorage(addCardDecks).then(res => {
         console.log(res);
-        // tag: #01 为什么这里AsyncStorage.set成功并且get验证有值，但我刷新应用后就为空了？是因为current mode: development么？
         getDecks().then(res => console.log(res));
       });
       return {
