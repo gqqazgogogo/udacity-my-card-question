@@ -28,8 +28,6 @@ class CreateCardModal extends Component {
   render() {
     const { visible, buttonTapped } = this.props;
 
-    // tag: #02 这里我使用TouchableWithoutFeedback onPress时收起键盘，是在网上找到的方案，感觉很奇怪
-    // 我想知道RN有没有类似iOS中textFieldShouldReturn那种代理方法或其他方法实现点击空白收起键盘，或者有没有官方解决办法？
     return (
       <Modal
         animationType="slide"
@@ -58,7 +56,7 @@ class CreateCardModal extends Component {
                 onValueChange={answer => this.setState({ answer })}
                 onTintColor={primary}
               />
-              <Text>正确</Text>
+            <Text>正确</Text>
             </StackView>
             <StackView>
               <TextButton

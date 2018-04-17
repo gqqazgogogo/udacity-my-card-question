@@ -49,6 +49,9 @@ class DeckList extends Component {
 
   createModalHandle(tag, info) {
     if (tag === "confirm") {
+      if (info === '') {
+        return;
+      }
       this.props.addDeck({ title: info, cards: [] });
     }
     this.toggleCreateModal(false);

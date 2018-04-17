@@ -12,10 +12,10 @@ import {
 } from "../components/ContainerView";
 import { TextButtonLight } from "../components/TextButton";
 import { addCard } from "../actions";
+import { clearLocalNotification, setLocalNotification } from "../utils/helpers";
 
 class TestDetail extends Component {
   static navigationOptions = ({ navigation }) => {
-    // const params = navigation.state.params || {};
     return {
       title: "卡片集测试",
       headerTintColor: white,
@@ -25,8 +25,6 @@ class TestDetail extends Component {
     };
   };
 
-  // tag: #03 下面第39、132行注释代码，new Animated.Value("0deg")的结果是"0deg0"，
-  // 我想知道Animated如何使用类似角度这些单位？
   state = {
     currentIndex: 0,
     rightNum: 0,
@@ -36,7 +34,7 @@ class TestDetail extends Component {
     animationInfo: {
       questionOpacity: new Animated.Value(1),
       answerOpacity: new Animated.Value(0),
-      // cardRotateY: new Animated.Value("0deg")
+      cardRotateY: new Animated.Value(0)
     }
   };
 
@@ -67,8 +65,7 @@ class TestDetail extends Component {
     this.setState({
       showAnswer: true
     });
-    // tag: #04 我想实现卡片翻转的动画效果，下面第71、132行注释的代码导致报错: { rotateY: null } 和问题#03相关联
-    // Animated.spring(cardRotateY, { toValue: "90deg", friction: 4 }).start();
+    Animated.timing(cardRotateY, { duration: 400, toValue: 0.5 }).start();
     Animated.sequence([
       Animated.timing(questionOpacity, { duration: 200, toValue: 0 }),
       Animated.timing(answerOpacity, { duration: 200, toValue: 1 })
@@ -84,8 +81,8 @@ class TestDetail extends Component {
   nextQuestion(currentIndex) {
     const {
       questionOpacity,
-      answerOpacity
-      // cardRotateY
+      answerOpacity,
+      cardRotateY
     } = this.state.animationInfo;
     const cards = this.props.navigation.state.params;
     if (currentIndex < cards.length - 1) {
@@ -94,11 +91,13 @@ class TestDetail extends Component {
         currentIndex
       });
     } else {
+      clearLocalNotification().then(setLocalNotification);
       this.setState({
         end: true
       });
     }
     setTimeout(() => {
+      Animated.timing(cardRotateY, { duration: 400, toValue: 0 }).start();
       Animated.sequence([
         Animated.timing(answerOpacity, { duration: 200, toValue: 0 }),
         Animated.timing(questionOpacity, { duration: 200, toValue: 1 })
@@ -129,7 +128,16 @@ class TestDetail extends Component {
         <ContainerCenterViewAnimated
           style={[
             styles.questionCard,
-            // { transform: [{ rotateY: cardRotateY }] }
+            {
+              transform: [
+                {
+                  rotateY: cardRotateY.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["0deg", "360deg"]
+                  })
+                }
+              ]
+            }
           ]}
         >
           {!showResult && (
@@ -148,20 +156,29 @@ class TestDetail extends Component {
             <ResultCross name="cross" style={{ opacity: answerOpacity }} />
           )}
         </ContainerCenterViewAnimated>
-        {!end && (
-          <StackView>
+        <StackView>
+          {!end && (
             <TextButtonLight
               text="错误"
               color={red}
               onPress={() => this.confrimAnswer(false)}
             />
+          )}
+          {!end && (
             <TextButtonLight
               text="正确"
               color={green}
               onPress={() => this.confrimAnswer(true)}
             />
-          </StackView>
-        )}
+          )}
+          {end && (
+            <TextButtonLight
+              text="返回"
+              color={primary}
+              onPress={() => this.props.navigation.goBack()}
+            />
+          )}
+        </StackView>
       </ContainerView>
     );
   }

@@ -39,6 +39,9 @@ class DeckDetail extends Component {
 
   createModalHandle(tag, info) {
     if (tag === "confirm") {
+      if (info.text === '' || info.answer === '') {
+        return;
+      }
       const { deck, index } = this.props.touchDeck;
       deck.cards.push({
         title: info.text,

@@ -1,4 +1,7 @@
 // @flow
+import { AsyncStorage } from "react-native";
+import { Notifications, Permissions } from "expo";
+
 /**
  * storage结构
  * decks:  [
@@ -13,8 +16,57 @@
  *  }
  * ]
  */
-import { AsyncStorage } from "react-native";
+
 const DECK_KEY = "mycard:deck";
+const NOTIFICATION_KEY = "mycard:notifications";
+
+export function clearLocalNotification() {
+  return AsyncStorage.removeItem(NOTIFICATION_KEY).then(
+    Notifications.cancelAllScheduledNotificationsAsync
+  );
+}
+
+export function setLocalNotification() {
+  AsyncStorage.getItem(NOTIFICATION_KEY)
+    .then(JSON.parse)
+    .then(data => {
+      if (data !== 'Y') {
+        Permissions.askAsync(Permissions.NOTIFICATIONS).then(({ status }) => {
+          if (status === "granted") {
+            Notifications.cancelAllScheduledNotificationsAsync();
+
+            let alertTime = new Date();
+            alertTime.setDate(alertTime.getDate() + 1);
+            alertTime.setHours(10);
+            alertTime.setMinutes(0);
+
+            Notifications.scheduleLocalNotificationAsync(createNotification(), {
+              time: alertTime,
+              repeat: "day"
+            });
+
+            AsyncStorage.setItem(NOTIFICATION_KEY, 'Y');
+          }
+        });
+      }
+    });
+}
+
+function createNotification() {
+  return {
+    title: "mycard",
+    body: "🂡老铁你今天还没有完成过卡片测试哦!",
+    ios: {
+      sound: true
+    },
+    android: {
+      sound: true,
+      priority: "high",
+      sticky: false,
+      vibrate: true
+    }
+  };
+}
 
 export function updateDeckStorage(decks: { title: string, cards: [] }) {
   return AsyncStorage.setItem(DECK_KEY, JSON.stringify(decks));
@@ -52,7 +104,7 @@ function deleteDeck(index: number) {
 export function addCard(deckIndex: number, { title, answer }) {
   getDecks().then(decks => {
     decks[deckIndex].card.push({ title, answer });
-		updateDeckStorage(decks);
+    updateDeckStorage(decks);
   });
 }
 

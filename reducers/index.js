@@ -1,5 +1,5 @@
 import { RECEIVE_DECKS, ADD_DECK, TOUCH_DECK, ADD_CARD } from "../actions";
-import { updateDeckStorage, getDecks } from "../utils/helpers";
+
 
 const initState = {
   // decks: [
@@ -25,19 +25,12 @@ function entries(state = initState, action) {
     case RECEIVE_DECKS:
       return {
         ...state,
-        ...action.decks
+        decks: action.decks
       };
     case ADD_DECK:
-      const addDeckDecks = [...state.decks, action.deck];
-      updateDeckStorage(addDeckDecks).then(res => {
-        console.log(res);
-        // tag: #01 为什么这里AsyncStorage.set成功并且get验证有值，但我模拟器和真机中刷新或重启应用后就为空了？
-        // 是因为current mode: development或者是expo而没发布么？
-        getDecks().then(res => console.log(res));
-      });
       return {
         ...state,
-        decks: addDeckDecks
+        decks: action.newDecks
       };
     case TOUCH_DECK:
       return {
@@ -45,19 +38,9 @@ function entries(state = initState, action) {
         touchDeck: action.info
       };
     case ADD_CARD:
-      const addCardDecks = state.decks.map((deck, index) => {
-        if (index === action.info.deckIndex) {
-          return action.info.deck;
-        }
-        return deck;
-      })
-      updateDeckStorage(addCardDecks).then(res => {
-        console.log(res);
-        getDecks().then(res => console.log(res));
-      });
       return {
         ...state,
-        decks: addCardDecks
+        decks: action.newDecks
       };
     default:
       return state;
